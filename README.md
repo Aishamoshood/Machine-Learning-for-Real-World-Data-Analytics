@@ -18,8 +18,8 @@ Official source:
 8. `src/experiments.py` - baseline and tuned experiment execution
 9. `src/main.py` - full pipeline orchestration
 10. `src/fast_experiments.py` - lightweight benchmarking for report-ready tables
-11. `run_all.py` - entry point for the complete pipeline
-12. `run_fast_report_experiments.py` - entry point for the lightweight report experiment
+11. `run_full.py` - entry point for the complete pipeline
+12. `run_report_experiments.py` - entry point for the lightweight report experiment
 13. `run_tuning_only.py` - entry point for tuning using processed data
 
 ## Models
@@ -43,12 +43,12 @@ pip install -r requirements.txt
 
 ## Run the full pipeline
 ```bash
-python run_all.py
+python run_full.py
 ```
 
 ## Run the lighter report experiment
 ```bash
-python run_fast_report_experiments.py
+python run_report_experiments.py
 ```
 
 ## Outputs generated
@@ -60,8 +60,8 @@ python run_fast_report_experiments.py
 6. `outputs/all_metrics.csv`
 7. `outputs/report_ready_table.csv`
 8. `outputs/report_results_table.md`
-9. `outputs/fast_report_ready_table.csv`
-10. `outputs/fast_report_results_table.md`
+9. `outputs/resultts_table.csv`
+10. `outputs/report_results_table.md`
 11. `outputs/figures/confusion_matrices/`
 12. `outputs/figures/roc_curves/`
 13. `outputs/figures/feature_importance/`
