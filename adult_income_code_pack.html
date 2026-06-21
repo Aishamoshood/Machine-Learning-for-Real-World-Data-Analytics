@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>COEN807 Adult Income Code Pack</title>
+<style>
+body { font-family: Arial, sans-serif; line-height: 1.45; margin: 36px; color: #222; }
+h1, h2, h3 { color: #0f3d75; }
+pre { white-space: pre-wrap; word-wrap: break-word; background: #f6f8fa; border: 1px solid #ddd; padding: 12px; font-size: 10px; }
+code { font-family: Consolas, monospace; }
+table { border-collapse: collapse; width: 100%; font-size: 11px; margin: 12px 0; }
+th, td { border: 1px solid #999; padding: 6px; text-align: left; }
+th { background: #eaf1fb; }
+.note { background: #fff8db; border-left: 4px solid #c49a00; padding: 10px 12px; margin: 12px 0; }
+.small { font-size: 11px; color: #555; }
+</style>
+</head>
+<body>
+<h1>COEN807 Adult Income Classification - Full Code Pack</h1>
+<p>This PDF contains the full code, setup instructions, and currently generated model outputs for the Adult Income supervised learning project.</p>
+
+<h2>Official Dataset Sources</h2>
+<ol>
+<li><a href="https://archive-beta.ics.uci.edu/dataset/2/adult">UCI Adult Dataset</a></li>
+<li><a href="https://archive.ics.uci.edu/ml/datasets/census+income">UCI Census Income Dataset</a></li>
+</ol>
+
+<h2>Included Files</h2>
+<ol>
+<li><b>run_all.py</b> - full end-to-end machine learning pipeline</li>
+<li><b>requirements.txt</b> - project dependencies</li>
+<li><b>README.md</b> - execution and reproducibility instructions</li>
+</ol>
+
+<h2>How to Run</h2>
+<pre>pip install -r requirements.txt
+python run_all.py</pre>
+
+<h2>Current Output Table</h2>
+<div class="note">The table below uses the metrics that were successfully generated from the executed pipeline so far. These values can be inserted into the report's results table. If you run the full tuning stage to completion, replace these baseline values with the tuned-model table exported by the script.</div>
+<table border="1" class="dataframe metrics-table">
+  <thead>
+    <tr style="text-align: right;">
+      <th>Accuracy</th>
+      <th>Precision</th>
+      <th>Recall</th>
+      <th>F1-score</th>
+      <th>ROC-AUC</th>
+      <th>Model</th>
+      <th>Training Time (s)</th>
+      <th>Stage</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>0.869895</td>
+      <td>0.794264</td>
+      <td>0.615911</td>
+      <td>0.693809</td>
+      <td>0.924409</td>
+      <td>Gradient Boosting</td>
+      <td>11.751158</td>
+      <td>Baseline</td>
+    </tr>
+    <tr>
+      <td>0.859863</td>
+      <td>0.756485</td>
+      <td>0.611206</td>
+      <td>0.676130</td>
+      <td>0.913936</td>
+      <td>Logistic Regression</td>
+      <td>2.595036</td>
+      <td>Baseline</td>
+    </tr>
+    <tr>
+      <td>0.851878</td>
+      <td>0.721973</td>
+      <td>0.619760</td>
+      <td>0.666974</td>
+      <td>0.902232</td>
+      <td>Random Forest</td>
+      <td>2.835573</td>
+      <td>Baseline</td>
+    </tr>
+    <tr>
+      <td>0.812366</td>
+      <td>0.604468</td>
+      <td>0.624893</td>
+      <td>0.614511</td>
+      <td>0.748121</td>
+      <td>Decision Tree</td>
+      <td>0.946910</td>
+      <td>Baseline</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>README.md</h2>
+<pre># Adult Income Classification - COEN807
+
+This project implements an end-to-end supervised machine learning workflow for predicting whether an individual&#x27;s annual income exceeds $50K using the UCI Adult dataset.
+
+## Dataset
+Official source:
+- https://archive-beta.ics.uci.edu/dataset/2/adult
+- https://archive.ics.uci.edu/ml/datasets/census+income
+
+## Models
+1. Logistic Regression
+2. Decision Tree
+3. Random Forest
+4. Gradient Boosting
+
+## What the pipeline does
+1. Fetches the official dataset from UCI.
+2. Cleans the data and handles missing values.
+3. Performs feature engineering.
+4. Runs baseline models.
+5. Performs hyperparameter tuning.
+6. Saves trained models, plots, reports, and report-ready results tables.
+
+## Install
+```bash
+pip install -r requirements.txt
+```
+
+## Run
+```bash
+python run_all.py
+```
+
+## Outputs generated
+- data/raw/adult_raw.csv
+- data/processed/adult_processed.csv
+- outputs/eda_summary.json
+- outputs/baseline_metrics.csv
+- outputs/tuned_metrics.csv
+- outputs/all_metrics.csv
+- outputs/report_ready_table.csv
+- outputs/report_results_table.md
+- outputs/figures/confusion_matrices/
+- outputs/figures/roc_curves/
+- outputs/figures/feature_importance/
+- models/*.joblib
+
+## Reproducibility
+- Random seed fixed at 42
+- Processing and modelling implemented through consistent pipelines
+- Metrics and figures are automatically saved for report insertion
+</pre>
+
+<h2>requirements.txt</h2>
+<pre>pandas
+numpy
+matplotlib
+seaborn
+scikit-learn
+joblib
+ucimlrepo
+</pre>
+
+<h2>run_all.py</h2>
+<pre>import json
+import os
+import time
+from pathlib import Path
+
+import joblib
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import seaborn as sns
+from ucimlrepo import fetch_ucirepo
+
+from sklearn.compose import ColumnTransformer
+from sklearn.impute import SimpleImputer
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import (
+    accuracy_score,
+    auc,
+    classification_report,
+    confusion_matrix,
+    f1_score,
+    precision_score,
+    recall_score,
+    roc_curve,
+)
+from sklearn.model_selection import GridSearchCV, RandomizedSearchCV, train_test_split
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+
+RANDOM_STATE = 42
+BASE_DIR = Path(&#x27;/home/user/adult_income_project&#x27;)
+DATA_DIR = BASE_DIR / &#x27;data&#x27;
+MODELS_DIR = BASE_DIR / &#x27;models&#x27;
+OUTPUTS_DIR = BASE_DIR / &#x27;outputs&#x27;
+FIGURES_DIR = OUTPUTS_DIR / &#x27;figures&#x27;
+REPORTS_DIR = OUTPUTS_DIR / &#x27;classification_reports&#x27;
+
+for p in [DATA_DIR / &#x27;raw&#x27;, DATA_DIR / &#x27;processed&#x27;, MODELS_DIR, OUTPUTS_DIR, FIGURES_DIR / &#x27;confusion_matrices&#x27;, FIGURES_DIR / &#x27;roc_curves&#x27;, FIGURES_DIR / &#x27;feature_importance&#x27;, REPORTS_DIR]:
+    p.mkdir(parents=True, exist_ok=True)
+
+sns.set_theme(style=&#x27;whitegrid&#x27;)
+
+
+def fetch_adult_data() -&gt; pd.DataFrame:
+    adult = fetch_ucirepo(id=2)
+    X = adult.data.features.copy()
+    y = adult.data.targets.copy()
+    if isinstance(y, pd.DataFrame):
+        y = y.iloc[:, 0]
+    df = X.copy()
+    df[&#x27;income&#x27;] = y.values
+    raw_path = DATA_DIR / &#x27;raw&#x27; / &#x27;adult_raw.csv&#x27;
+    df.to_csv(raw_path, index=False)
+    return df
+
+
+def basic_cleaning(df: pd.DataFrame) -&gt; pd.DataFrame:
+    df = df.copy()
+    df.columns = [str(c).strip().replace(&#x27;-&#x27;, &#x27;_&#x27;) for c in df.columns]
+    for col in df.select_dtypes(include=&#x27;object&#x27;).columns:
+        df[col] = df[col].astype(str).str.strip()
+        df[col] = df[col].replace({&#x27;?&#x27;: np.nan, &#x27;nan&#x27;: np.nan, &#x27;None&#x27;: np.nan})
+
+    df[&#x27;income&#x27;] = df[&#x27;income&#x27;].replace({&#x27;&lt;=50K.&#x27;: &#x27;&lt;=50K&#x27;, &#x27;&gt;50K.&#x27;: &#x27;&gt;50K&#x27;})
+    df[&#x27;income&#x27;] = df[&#x27;income&#x27;].map({&#x27;&lt;=50K&#x27;: 0, &#x27;&gt;50K&#x27;: 1})
+    return df
+
+
+def feature_engineering(df: pd.DataFrame) -&gt; pd.DataFrame:
+    df = df.copy()
+
+    df[&#x27;has_capital_gain&#x27;] = (df[&#x27;capital_gain&#x27;].fillna(0) &gt; 0).astype(int)
+    df[&#x27;has_capital_loss&#x27;] = (df[&#x27;capital_loss&#x27;].fillna(0) &gt; 0).astype(int)
+
+    age_bins = [16, 25, 35, 45, 55, 100]
+    age_labels = [&#x27;17-25&#x27;, &#x27;26-35&#x27;, &#x27;36-45&#x27;, &#x27;46-55&#x27;, &#x27;56+&#x27;]
+    df[&#x27;age_group&#x27;] = pd.cut(df[&#x27;age&#x27;], bins=age_bins, labels=age_labels, include_lowest=True)
+
+    hours_bins = [-1, 34, 45, 60, 200]
+    hours_labels = [&#x27;part_time&#x27;, &#x27;full_time&#x27;, &#x27;overtime&#x27;, &#x27;extreme_overtime&#x27;]
+    df[&#x27;work_intensity&#x27;] = pd.cut(df[&#x27;hours_per_week&#x27;], bins=hours_bins, labels=hours_labels)
+
+    region_map = {
+        &#x27;United-States&#x27;: &#x27;North America&#x27;, &#x27;Canada&#x27;: &#x27;North America&#x27;, &#x27;Puerto-Rico&#x27;: &#x27;North America&#x27;,
+        &#x27;Mexico&#x27;: &#x27;Latin America&#x27;, &#x27;Cuba&#x27;: &#x27;Latin America&#x27;, &#x27;Jamaica&#x27;: &#x27;Latin America&#x27;, &#x27;Haiti&#x27;: &#x27;Latin America&#x27;,
+        &#x27;Dominican-Republic&#x27;: &#x27;Latin America&#x27;, &#x27;El-Salvador&#x27;: &#x27;Latin America&#x27;, &#x27;Guatemala&#x27;: &#x27;Latin America&#x27;,
+        &#x27;Nicaragua&#x27;: &#x27;Latin America&#x27;, &#x27;Columbia&#x27;: &#x27;Latin America&#x27;, &#x27;Ecuador&#x27;: &#x27;Latin America&#x27;, &#x27;Peru&#x27;: &#x27;Latin America&#x27;,
+        &#x27;Trinadad&amp;Tobago&#x27;: &#x27;Latin America&#x27;, &#x27;Honduras&#x27;: &#x27;Latin America&#x27;,
+        &#x27;England&#x27;: &#x27;Europe&#x27;, &#x27;Germany&#x27;: &#x27;Europe&#x27;, &#x27;Greece&#x27;: &#x27;Europe&#x27;, &#x27;Italy&#x27;: &#x27;Europe&#x27;, &#x27;Poland&#x27;: &#x27;Europe&#x27;,
+        &#x27;Portugal&#x27;: &#x27;Europe&#x27;, &#x27;Ireland&#x27;: &#x27;Europe&#x27;, &#x27;France&#x27;: &#x27;Europe&#x27;, &#x27;Hungary&#x27;: &#x27;Europe&#x27;, &#x27;Scotland&#x27;: &#x27;Europe&#x27;,
+        &#x27;Yugoslavia&#x27;: &#x27;Europe&#x27;, &#x27;Holand-Netherlands&#x27;: &#x27;Europe&#x27;,
+        &#x27;India&#x27;: &#x27;Asia&#x27;, &#x27;Japan&#x27;: &#x27;Asia&#x27;, &#x27;China&#x27;: &#x27;Asia&#x27;, &#x27;Iran&#x27;: &#x27;Asia&#x27;, &#x27;Philippines&#x27;: &#x27;Asia&#x27;, &#x27;Vietnam&#x27;: &#x27;Asia&#x27;,
+        &#x27;Laos&#x27;: &#x27;Asia&#x27;, &#x27;Taiwan&#x27;: &#x27;Asia&#x27;, &#x27;Thailand&#x27;: &#x27;Asia&#x27;, &#x27;Hong&#x27;: &#x27;Asia&#x27;, &#x27;Cambodia&#x27;: &#x27;Asia&#x27;,
+        &#x27;South&#x27;: &#x27;Other&#x27;, &#x27;Outlying-US(Guam-USVI-etc)&#x27;: &#x27;Other&#x27;
+    }
+    df[&#x27;native_region&#x27;] = df[&#x27;native_country&#x27;].map(region_map).fillna(&#x27;Other&#x27;)
+    return df
+
+
+def save_eda_outputs(df: pd.DataFrame) -&gt; None:
+    summary = {
+        &#x27;shape&#x27;: list(df.shape),
+        &#x27;columns&#x27;: df.columns.tolist(),
+        &#x27;missing_values&#x27;: df.isna().sum().to_dict(),
+        &#x27;class_distribution&#x27;: df[&#x27;income&#x27;].value_counts(dropna=False).to_dict(),
+        &#x27;numeric_summary&#x27;: df.describe(include=[np.number]).round(3).to_dict(),
+    }
+    with open(OUTPUTS_DIR / &#x27;eda_summary.json&#x27;, &#x27;w&#x27;, encoding=&#x27;utf-8&#x27;) as f:
+        json.dump(summary, f, indent=2)
+
+    plt.figure(figsize=(6, 4))
+    income_counts = df[&#x27;income&#x27;].value_counts().sort_index()
+    labels = [&#x27;&lt;=50K&#x27;, &#x27;&gt;50K&#x27;]
+    sns.barplot(x=labels, y=income_counts.values, palette=&#x27;Blues_d&#x27;)
+    plt.title(&#x27;Income Class Distribution&#x27;)
+    plt.xlabel(&#x27;Income Class&#x27;)
+    plt.ylabel(&#x27;Count&#x27;)
+    plt.tight_layout()
+    plt.savefig(FIGURES_DIR / &#x27;class_distribution.png&#x27;, dpi=200)
+    plt.close()
+
+    plt.figure(figsize=(7, 4))
+    sns.histplot(data=df, x=&#x27;age&#x27;, hue=&#x27;income&#x27;, bins=30, kde=True, stat=&#x27;density&#x27;, common_norm=False)
+    plt.title(&#x27;Age Distribution by Income Class&#x27;)
+    plt.tight_layout()
+    plt.savefig(FIGURES_DIR / &#x27;age_distribution_by_income.png&#x27;, dpi=200)
+    plt.close()
+
+    plt.figure(figsize=(9, 5))
+    top_edu = df[&#x27;education&#x27;].value_counts().head(10).index
+    sns.countplot(data=df[df[&#x27;education&#x27;].isin(top_edu)], y=&#x27;education&#x27;, hue=&#x27;income&#x27;, order=top_edu)
+    plt.title(&#x27;Top Education Levels by Income Class&#x27;)
+    plt.tight_layout()
+    plt.savefig(FIGURES_DIR / &#x27;education_by_income.png&#x27;, dpi=200)
+    plt.close()
+
+
+def build_preprocessor(X: pd.DataFrame) -&gt; ColumnTransformer:
+    numeric_features = X.select_dtypes(include=[&#x27;int64&#x27;, &#x27;float64&#x27;]).columns.tolist()
+    categorical_features = X.select_dtypes(include=[&#x27;object&#x27;, &#x27;category&#x27;]).columns.tolist()
+
+    numeric_transformer = Pipeline(steps=[
+        (&#x27;imputer&#x27;, SimpleImputer(strategy=&#x27;median&#x27;)),
+        (&#x27;scaler&#x27;, StandardScaler()),
+    ])
+
+    categorical_transformer = Pipeline(steps=[
+        (&#x27;imputer&#x27;, SimpleImputer(strategy=&#x27;most_frequent&#x27;)),
+        (&#x27;onehot&#x27;, OneHotEncoder(handle_unknown=&#x27;ignore&#x27;, sparse_output=False)),
+    ])
+
+    preprocessor = ColumnTransformer(
+        transformers=[
+            (&#x27;num&#x27;, numeric_transformer, numeric_features),
+            (&#x27;cat&#x27;, categorical_transformer, categorical_features),
+        ]
+    )
+    return preprocessor
+
+
+def get_models():
+    return {
+        &#x27;Logistic Regression&#x27;: LogisticRegression(max_iter=2000, random_state=RANDOM_STATE),
+        &#x27;Decision Tree&#x27;: DecisionTreeClassifier(random_state=RANDOM_STATE),
+        &#x27;Random Forest&#x27;: RandomForestClassifier(random_state=RANDOM_STATE, n_jobs=-1),
+        &#x27;Gradient Boosting&#x27;: GradientBoostingClassifier(random_state=RANDOM_STATE),
+    }
+
+
+def get_param_grids():
+    return {
+        &#x27;Logistic Regression&#x27;: {
+            &#x27;classifier__C&#x27;: [0.1, 1.0],
+            &#x27;classifier__penalty&#x27;: [&#x27;l2&#x27;],
+            &#x27;classifier__solver&#x27;: [&#x27;lbfgs&#x27;],
+        },
+        &#x27;Decision Tree&#x27;: {
+            &#x27;classifier__max_depth&#x27;: [10, None],
+            &#x27;classifier__min_samples_split&#x27;: [2, 10],
+            &#x27;classifier__min_samples_leaf&#x27;: [1, 2],
+            &#x27;classifier__criterion&#x27;: [&#x27;gini&#x27;, &#x27;entropy&#x27;],
+        },
+        &#x27;Random Forest&#x27;: {
+            &#x27;classifier__n_estimators&#x27;: [100],
+            &#x27;classifier__max_depth&#x27;: [20, None],
+            &#x27;classifier__min_samples_split&#x27;: [2, 10],
+            &#x27;classifier__min_samples_leaf&#x27;: [1, 2],
+            &#x27;classifier__max_features&#x27;: [&#x27;sqrt&#x27;],
+        },
+        &#x27;Gradient Boosting&#x27;: {
+            &#x27;classifier__n_estimators&#x27;: [100],
+            &#x27;classifier__learning_rate&#x27;: [0.05, 0.1],
+            &#x27;classifier__max_depth&#x27;: [2, 3],
+            &#x27;classifier__subsample&#x27;: [0.8, 1.0],
+        },
+    }
+
+
+def compute_metrics(y_true, y_pred, y_prob):
+    fpr, tpr, _ = roc_curve(y_true, y_prob)
+    return {
+        &#x27;Accuracy&#x27;: accuracy_score(y_true, y_pred),
+        &#x27;Precision&#x27;: precision_score(y_true, y_pred),
+        &#x27;Recall&#x27;: recall_score(y_true, y_pred),
+        &#x27;F1-score&#x27;: f1_score(y_true, y_pred),
+        &#x27;ROC-AUC&#x27;: auc(fpr, tpr),
+    }
+
+
+def plot_confusion(y_true, y_pred, model_name: str):
+    cm = confusion_matrix(y_true, y_pred)
+    plt.figure(figsize=(5, 4))
+    sns.heatmap(cm, annot=True, fmt=&#x27;d&#x27;, cmap=&#x27;Blues&#x27;, cbar=False)
+    plt.title(f&#x27;Confusion Matrix - {model_name}&#x27;)
+    plt.xlabel(&#x27;Predicted&#x27;)
+    plt.ylabel(&#x27;Actual&#x27;)
+    plt.tight_layout()
+    safe_name = model_name.lower().replace(&#x27; &#x27;, &#x27;_&#x27;)
+    plt.savefig(FIGURES_DIR / &#x27;confusion_matrices&#x27; / f&#x27;{safe_name}.png&#x27;, dpi=200)
+    plt.close()
+
+
+def plot_roc(y_true, y_prob, model_name: str):
+    fpr, tpr, _ = roc_curve(y_true, y_prob)
+    score = auc(fpr, tpr)
+    plt.figure(figsize=(5, 4))
+    plt.plot(fpr, tpr, label=f&#x27;AUC = {score:.4f}&#x27;)
+    plt.plot([0, 1], [0, 1], linestyle=&#x27;--&#x27;, color=&#x27;gray&#x27;)
+    plt.xlabel(&#x27;False Positive Rate&#x27;)
+    plt.ylabel(&#x27;True Positive Rate&#x27;)
+    plt.title(f&#x27;ROC Curve - {model_name}&#x27;)
+    plt.legend(loc=&#x27;lower right&#x27;)
+    plt.tight_layout()
+    safe_name = model_name.lower().replace(&#x27; &#x27;, &#x27;_&#x27;)
+    plt.savefig(FIGURES_DIR / &#x27;roc_curves&#x27; / f&#x27;{safe_name}.png&#x27;, dpi=200)
+    plt.close()
+
+
+def save_classification_report(y_true, y_pred, model_name: str):
+    report = classification_report(y_true, y_pred, digits=4)
+    safe_name = model_name.lower().replace(&#x27; &#x27;, &#x27;_&#x27;)
+    with open(REPORTS_DIR / f&#x27;{safe_name}.txt&#x27;, &#x27;w&#x27;, encoding=&#x27;utf-8&#x27;) as f:
+        f.write(report)
+
+
+def extract_feature_names(preprocessor: ColumnTransformer):
+    num_features = preprocessor.transformers_[0][2]
+    cat_pipeline = preprocessor.transformers_[1][1]
+    cat_features = preprocessor.transformers_[1][2]
+    ohe = cat_pipeline.named_steps[&#x27;onehot&#x27;]
+    cat_names = ohe.get_feature_names_out(cat_features).tolist()
+    return list(num_features) + cat_names
+
+
+def save_feature_importance(model_pipeline: Pipeline, model_name: str):
+    clf = model_pipeline.named_steps[&#x27;classifier&#x27;]
+    preprocessor = model_pipeline.named_steps[&#x27;preprocessor&#x27;]
+    feature_names = extract_feature_names(preprocessor)
+
+    values = None
+    if hasattr(clf, &#x27;feature_importances_&#x27;):
+        values = clf.feature_importances_
+    elif hasattr(clf, &#x27;coef_&#x27;):
+        values = np.abs(clf.coef_[0])
+    if values is None:
+        return
+
+    top_n = min(15, len(feature_names))
+    imp = pd.Series(values, index=feature_names).sort_values(ascending=False).head(top_n)
+    plt.figure(figsize=(8, 6))
+    sns.barplot(x=imp.values, y=imp.index, palette=&#x27;viridis&#x27;)
+    plt.title(f&#x27;Top Feature Importance - {model_name}&#x27;)
+    plt.xlabel(&#x27;Importance&#x27;)
+    plt.ylabel(&#x27;Feature&#x27;)
+    plt.tight_layout()
+    safe_name = model_name.lower().replace(&#x27; &#x27;, &#x27;_&#x27;)
+    plt.savefig(FIGURES_DIR / &#x27;feature_importance&#x27; / f&#x27;{safe_name}.png&#x27;, dpi=200)
+    plt.close()
+
+
+def run_baseline_models(X_train, X_test, y_train, y_test, preprocessor):
+    rows = []
+    best_auc = -1
+    best_name = None
+    best_pipeline = None
+
+    for model_name, model in get_models().items():
+        start = time.time()
+        pipeline = Pipeline(steps=[
+            (&#x27;preprocessor&#x27;, preprocessor),
+            (&#x27;classifier&#x27;, model),
+        ])
+        pipeline.fit(X_train, y_train)
+        y_pred = pipeline.predict(X_test)
+        y_prob = pipeline.predict_proba(X_test)[:, 1]
+        metrics = compute_metrics(y_test, y_pred, y_prob)
+        metrics[&#x27;Model&#x27;] = model_name
+        metrics[&#x27;Training Time (s)&#x27;] = time.time() - start
+        metrics[&#x27;Stage&#x27;] = &#x27;Baseline&#x27;
+        rows.append(metrics)
+
+        joblib.dump(pipeline, MODELS_DIR / f&quot;{model_name.lower().replace(&#x27; &#x27;, &#x27;_&#x27;)}_baseline.joblib&quot;)
+        plot_confusion(y_test, y_pred, model_name + &#x27; Baseline&#x27;)
+        plot_roc(y_test, y_prob, model_name + &#x27; Baseline&#x27;)
+        save_classification_report(y_test, y_pred, model_name + &#x27;_baseline&#x27;)
+        save_feature_importance(pipeline, model_name + &#x27; Baseline&#x27;)
+
+        if metrics[&#x27;ROC-AUC&#x27;] &gt; best_auc:
+            best_auc = metrics[&#x27;ROC-AUC&#x27;]
+            best_name = model_name
+            best_pipeline = pipeline
+
+    baseline_df = pd.DataFrame(rows).sort_values(by=&#x27;ROC-AUC&#x27;, ascending=False)
+    baseline_df.to_csv(OUTPUTS_DIR / &#x27;baseline_metrics.csv&#x27;, index=False)
+    return baseline_df, best_name, best_pipeline
+
+
+def run_tuned_models(X_train, X_test, y_train, y_test, preprocessor):
+    rows = []
+    grids = get_param_grids()
+
+    for model_name, model in get_models().items():
+        base_pipeline = Pipeline(steps=[
+            (&#x27;preprocessor&#x27;, preprocessor),
+            (&#x27;classifier&#x27;, model),
+        ])
+        start = time.time()
+
+        if model_name in [&#x27;Random Forest&#x27;, &#x27;Gradient Boosting&#x27;]:
+            search = RandomizedSearchCV(
+                estimator=base_pipeline,
+                param_distributions=grids[model_name],
+                n_iter=3,
+                cv=3,
+                scoring=&#x27;f1&#x27;,
+                n_jobs=-1,
+                random_state=RANDOM_STATE,
+                verbose=0,
+            )
+        else:
+            search = GridSearchCV(
+                estimator=base_pipeline,
+                param_grid=grids[model_name],
+                cv=3,
+                scoring=&#x27;f1&#x27;,
+                n_jobs=-1,
+                verbose=0,
+            )
+
+        search.fit(X_train, y_train)
+        best_model = search.best_estimator_
+        y_pred = best_model.predict(X_test)
+        y_prob = best_model.predict_proba(X_test)[:, 1]
+        metrics = compute_metrics(y_test, y_pred, y_prob)
+        metrics[&#x27;Model&#x27;] = model_name
+        metrics[&#x27;Training Time (s)&#x27;] = time.time() - start
+        metrics[&#x27;Stage&#x27;] = &#x27;Tuned&#x27;
+        metrics[&#x27;Best Params&#x27;] = json.dumps(search.best_params_)
+        rows.append(metrics)
+
+        joblib.dump(best_model, MODELS_DIR / f&quot;{model_name.lower().replace(&#x27; &#x27;, &#x27;_&#x27;)}_tuned.joblib&quot;)
+        plot_confusion(y_test, y_pred, model_name + &#x27; Tuned&#x27;)
+        plot_roc(y_test, y_prob, model_name + &#x27; Tuned&#x27;)
+        save_classification_report(y_test, y_pred, model_name + &#x27;_tuned&#x27;)
+        save_feature_importance(best_model, model_name + &#x27; Tuned&#x27;)
+
+    tuned_df = pd.DataFrame(rows).sort_values(by=&#x27;ROC-AUC&#x27;, ascending=False)
+    tuned_df.to_csv(OUTPUTS_DIR / &#x27;tuned_metrics.csv&#x27;, index=False)
+    return tuned_df
+
+
+def build_report_tables(baseline_df: pd.DataFrame, tuned_df: pd.DataFrame):
+    final_df = pd.concat([baseline_df, tuned_df], ignore_index=True)
+    final_df.to_csv(OUTPUTS_DIR / &#x27;all_metrics.csv&#x27;, index=False)
+
+    report_table = tuned_df[[&#x27;Model&#x27;, &#x27;Accuracy&#x27;, &#x27;Precision&#x27;, &#x27;Recall&#x27;, &#x27;F1-score&#x27;, &#x27;ROC-AUC&#x27;]].copy()
+    report_table = report_table.sort_values(by=&#x27;ROC-AUC&#x27;, ascending=False)
+    report_table[&#x27;Notes&#x27;] = [
+        &#x27;Best tuned model&#x27; if i == 0 else &#x27;Tuned comparison model&#x27; for i in range(len(report_table))
+    ]
+    report_table_rounded = report_table.copy()
+    for col in [&#x27;Accuracy&#x27;, &#x27;Precision&#x27;, &#x27;Recall&#x27;, &#x27;F1-score&#x27;, &#x27;ROC-AUC&#x27;]:
+        report_table_rounded[col] = report_table_rounded[col].map(lambda x: f&#x27;{x:.4f}&#x27;)
+    report_table_rounded.to_csv(OUTPUTS_DIR / &#x27;report_ready_table.csv&#x27;, index=False)
+
+    md_lines = []
+    md_lines.append(&#x27;# Results Table for Report\n&#x27;)
+    md_lines.append(&#x27;Use the tuned-model table below in the Results and Evaluation section of the report.\n&#x27;)
+    md_lines.append(&#x27;| Model | Accuracy | Precision | Recall | F1-score | ROC-AUC | Notes |&#x27;)
+    md_lines.append(&#x27;|---|---:|---:|---:|---:|---:|---|&#x27;)
+    for _, row in report_table_rounded.iterrows():
+        md_lines.append(
+            f&quot;| {row[&#x27;Model&#x27;]} | {row[&#x27;Accuracy&#x27;]} | {row[&#x27;Precision&#x27;]} | {row[&#x27;Recall&#x27;]} | {row[&#x27;F1-score&#x27;]} | {row[&#x27;ROC-AUC&#x27;]} | {row[&#x27;Notes&#x27;]} |&quot;
+        )
+    md_lines.append(&#x27;\n## Baseline vs Tuned Summary\n&#x27;)
+    combined = final_df[[&#x27;Stage&#x27;, &#x27;Model&#x27;, &#x27;Accuracy&#x27;, &#x27;Precision&#x27;, &#x27;Recall&#x27;, &#x27;F1-score&#x27;, &#x27;ROC-AUC&#x27;]].copy()
+    for _, row in combined.iterrows():
+        md_lines.append(
+            f&quot;- {row[&#x27;Stage&#x27;]}: {row[&#x27;Model&#x27;]} -&gt; Accuracy={row[&#x27;Accuracy&#x27;]:.4f}, Precision={row[&#x27;Precision&#x27;]:.4f}, Recall={row[&#x27;Recall&#x27;]:.4f}, F1={row[&#x27;F1-score&#x27;]:.4f}, ROC-AUC={row[&#x27;ROC-AUC&#x27;]:.4f}&quot;
+        )
+    with open(OUTPUTS_DIR / &#x27;report_results_table.md&#x27;, &#x27;w&#x27;, encoding=&#x27;utf-8&#x27;) as f:
+        f.write(&#x27;\n&#x27;.join(md_lines))
+
+
+def main():
+    print(&#x27;Fetching Adult dataset...&#x27;)
+    raw_df = fetch_adult_data()
+
+    print(&#x27;Cleaning and engineering features...&#x27;)
+    clean_df = basic_cleaning(raw_df)
+    model_df = feature_engineering(clean_df)
+    model_df.to_csv(DATA_DIR / &#x27;processed&#x27; / &#x27;adult_processed.csv&#x27;, index=False)
+
+    print(&#x27;Saving EDA outputs...&#x27;)
+    save_eda_outputs(model_df)
+
+    X = model_df.drop(columns=[&#x27;income&#x27;])
+    y = model_df[&#x27;income&#x27;]
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=RANDOM_STATE, stratify=y
+    )
+
+    preprocessor = build_preprocessor(X_train)
+
+    print(&#x27;Running baseline models...&#x27;)
+    baseline_df, best_name, _ = run_baseline_models(X_train, X_test, y_train, y_test, preprocessor)
+    print(&#x27;Best baseline model:&#x27;, best_name)
+
+    print(&#x27;Running tuned models...&#x27;)
+    tuned_df = run_tuned_models(X_train, X_test, y_train, y_test, preprocessor)
+
+    print(&#x27;Building report-ready tables...&#x27;)
+    build_report_tables(baseline_df, tuned_df)
+
+    with open(OUTPUTS_DIR / &#x27;run_complete.txt&#x27;, &#x27;w&#x27;, encoding=&#x27;utf-8&#x27;) as f:
+        f.write(&#x27;Pipeline completed successfully.\n&#x27;)
+
+    print(&#x27;Done. Check outputs folder for metrics, figures, and report-ready tables.&#x27;)
+
+
+if __name__ == &#x27;__main__&#x27;:
+    main()
+</pre>
+
+<p class="small">Generated from the project workspace for submission support.</p>
+</body>
+</html>

@@ -1,0 +1,15 @@
+/home/user/adult_income_project/run_all.py:116: FutureWarning: 
+
+Passing `palette` without assigning `hue` is deprecated and will be removed in v0.14.0. Assign the `x` variable to `hue` and set `legend=False` for the same effect.
+
+  sns.barplot(x=labels, y=income_counts.values, palette='Blues_d')
+/home/user/adult_income_project/run_all.py:273: FutureWarning: 
+
+Passing `palette` without assigning `hue` is deprecated and will be removed in v0.14.0. Assign the `y` variable to `hue` and set `legend=False` for the same effect.
+
+  sns.barplot(x=imp.values, y=imp.index, palette='viridis')
+/home/user/adult_income_project/run_all.py:273: FutureWarning: 
+
+Passing `palette` without assigning `hue` is deprecated and will be removed in v0.14.0. Assign the `y` variable to `hue` and set `legend=False` for the same effect.
+
+  sns.barplot(x=imp.values, y=imp.index, palette='viridis')
